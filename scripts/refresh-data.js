@@ -1,6 +1,6 @@
 /**
- * refresh-data.js - FINAL VERSION (May 28, 2026)
- * Includes: Weekly filtering, Wages, Expenses, Aged Receivables, Google Sheets
+ * refresh-data.js - ULTIMATE FINAL VERSION
+ * Strong filtering + Wages + Expenses + YTD Budget + Aged
  */
 
 const fs = require("node:fs");
@@ -62,6 +62,32 @@ async function xeroGet(accessToken, endpoint, query = {}, attempt = 1) {
   }
 }
 
+// ==================== GOOGLE SHEETS ====================
+async function fetchBudget() {
+  if (!process.env.GOOGLE_SHEET_ID || !process.env.GOOGLE_API_KEY) return { revenue: 0, wages: 0, expenses: 0, net: 0 };
+
+  try {
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${process.env.GOOGLE_SHEET_ID}/values/Sheet1!A1:O50?key=${process.env.GOOGLE_API_KEY}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const rows = data.values || [];
+
+    let revenue = 0, wages = 0, expenses = 0;
+
+    rows.forEach((row, i) => {
+      if (row[0] === "Total Revenue") revenue = Number(row[14]) || 0;
+      if (row[0] === "Total Direct Expenses" || row[0] === "Wages") wages += Number(row[14]) || 0;
+      if (row[0] === "Total Indirect Expenses") expenses += Number(row[14]) || 0;
+    });
+
+    console.log(`✅ Budget loaded - Rev: $${revenue}, Wages: $${wages}, Exp: $${expenses}`);
+    return { revenue, wages, expenses, net: revenue - wages - expenses };
+  } catch (e) {
+    console.warn("Google Sheet failed:", e.message);
+    return { revenue: 0, wages: 0, expenses: 0, net: 0 };
+  }
+}
+
 // ==================== DATE HELPERS ====================
 function startOfWeek(d) {
   const date = new Date(d);
@@ -80,7 +106,7 @@ function endOfWeek(d) {
 }
 function iso(d) { return d.toISOString().slice(0, 10); }
 
-// ==================== TRACKING ====================
+// ==================== TRACKING & AGGREGATION ====================
 function getLineTracking(line, categoryName) {
   if (!line?.Tracking) return null;
   const match = line.Tracking.find(t => t.Name === categoryName);
@@ -123,7 +149,7 @@ function aggregateWeek(invoices, creditNotes) {
   };
 }
 
-// ==================== P&L FETCH ====================
+// ==================== P&L ====================
 async function fetchFromPL(accessToken, fromDate, toDate, codes) {
   if (!codes?.length) return 0;
   const data = await xeroGet(accessToken, "Reports/ProfitAndLoss", { fromDate, toDate, standardLayout: "false" });
@@ -145,21 +171,17 @@ async function fetchFromPL(accessToken, fromDate, toDate, codes) {
 
 // ==================== MAIN ====================
 async function main() {
-  console.log("🚀 Starting FINAL dashboard refresh...");
-
-  if (!process.env.XERO_REFRESH_TOKEN || !process.env.XERO_CLIENT_ID || !process.env.XERO_CLIENT_SECRET || !process.env.XERO_TENANT_ID) {
-    console.log("⚠️ Xero credentials not configured — skipping refresh, keeping existing data.json");
-    process.exit(0);
-  }
+  console.log("🚀 Starting ULTIMATE dashboard refresh...");
 
   const accessToken = await getAccessToken();
   const now = new Date();
   const weekStart = startOfWeek(now);
   const weekEnd = endOfWeek(now);
+  const priorStart = startOfWeek(new Date(now.getTime() - 7*24*60*60*1000));
+  const priorEnd = endOfWeek(new Date(now.getTime() - 7*24*60*60*1000));
 
-  console.log(`📅 Week: ${iso(weekStart)} to ${iso(weekEnd)}`);
+  console.log(`📅 Current Week: ${iso(weekStart)} - ${iso(weekEnd)}`);
 
-  // Fetch data
   const [thisWeekInv, thisWeekCN] = await Promise.all([
     (async () => {
       const all = [];
@@ -171,7 +193,6 @@ async function main() {
         if (batch.length < 100) break;
         page += 1;
       }
-      console.log(`✅ Fetched ${all.length} invoices this week`);
       return all;
     })(),
     (async () => {
@@ -189,6 +210,7 @@ async function main() {
   ]);
 
   const thisWeek = aggregateWeek(thisWeekInv, thisWeekCN);
+  const budget = await fetchBudget();
 
   const wageCodes = (process.env.WAGE_ACCOUNT_CODES || "").split(",").map(s => s.trim()).filter(Boolean);
   const expenseCodes = (process.env.EXPENSE_ACCOUNT_CODES || "").split(",").map(s => s.trim()).filter(Boolean);
@@ -203,7 +225,9 @@ async function main() {
       generated_at: new Date().toISOString(),
       data_source: "LIVE — Xero + Google Sheets",
       week_start: iso(weekStart),
-      week_end: iso(weekEnd)
+      week_end: iso(weekEnd),
+      prior_week_start: iso(priorStart),
+      prior_week_end: iso(priorEnd)
     },
     week: {
       jobs_total: thisWeek.jobs,
@@ -218,20 +242,20 @@ async function main() {
     vehicle_use: thisWeek.vehicle_use,
     ytd: {
       revenue_actual: thisWeek.revenue,
-      revenue_budget: 0,
+      revenue_budget: budget.revenue,
       wages_actual: wages,
-      wages_budget: 0,
+      wages_budget: budget.wages,
       expenses_actual: expenses,
-      expenses_budget: 0,
+      expenses_budget: budget.expenses,
       net_actual: Math.round(thisWeek.revenue - wages - expenses),
-      net_budget: 0,
+      net_budget: budget.net,
       months_elapsed: 11,
       months_in_year: 12
     }
   };
 
   fs.writeFileSync(OUTPUT_PATH, JSON.stringify(output, null, 2));
-  console.log(`✅ Dashboard updated — Jobs: ${thisWeek.jobs} | Revenue: $${thisWeek.revenue} | Wages: $${wages} | Expenses: $${expenses}`);
+  console.log(`✅ Dashboard updated — Jobs: ${thisWeek.jobs} | Revenue: $${thisWeek.revenue}`);
 }
 
 main().catch(err => {
