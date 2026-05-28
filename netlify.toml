@@ -1,0 +1,35 @@
+[build]
+publish = "public"
+command = "node scripts/refresh-data.js"
+
+[functions]
+directory = "netlify/functions"
+node_bundler = "esbuild"
+
+[functions.scheduled-refresh]
+schedule = "0 20 * * *"
+
+[[redirects]]
+from = "/auth/start"
+to = "/.netlify/functions/xero-auth-start"
+status = 200
+
+[[redirects]]
+from = "/auth/callback"
+to = "/.netlify/functions/xero-auth-callback"
+status = 200
+
+[[headers]]
+for = "/data.json"
+
+[headers.values]
+Cache-Control = "no-cache, no-store, must-revalidate"
+
+[[headers]]
+for = "/*"
+
+[headers.values]
+X-Frame-Options = "DENY"
+X-Content-Type-Options = "nosniff"
+Referrer-Policy = "strict-origin-when-cross-origin"
+Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://api.xero.com https://identity.xero.com;"

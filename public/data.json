@@ -1,0 +1,78 @@
+{
+  "_meta": {
+    "generated_at": "2026-05-22T07:30:00+10:00",
+    "data_source": "SAMPLE DATA — replace with live refresh output",
+    "week_start": "2026-05-18",
+    "week_end": "2026-05-24",
+    "prior_week_start": "2026-05-11",
+    "prior_week_end": "2026-05-17",
+    "ytd_start": "2025-07-01",
+    "currency": "AUD",
+    "timezone": "Australia/Sydney"
+  },
+  "week": {
+    "jobs_total": 87,
+    "jobs_prior_week": 79,
+    "revenue": 14620.50,
+    "revenue_prior_week": 13180.00,
+    "wages": 6420.00,
+    "wages_prior_week": 6180.00,
+    "expenses": 2105.40,
+    "expenses_prior_week": 1940.80,
+    "gross_margin": 6095.10,
+    "avg_revenue_per_job": 168.05,
+    "aged_receivables": {
+      "current": 8320.00,
+      "1_30": 4150.00,
+      "31_60": 1280.00,
+      "61_90": 0.00,
+      "over_90": 0.00,
+      "total": 13750.00
+    }
+  },
+  "jobs_by_client": [
+    { "sector": "RSL Lifecare",   "jobs": 22, "revenue": 4180.00 },
+    { "sector": "Baptistcare",    "jobs": 18, "revenue": 3240.00 },
+    { "sector": "Home Caring",    "jobs": 14, "revenue": 2380.00 },
+    { "sector": "Trilogy",        "jobs": 11, "revenue": 1980.00 },
+    { "sector": "DVA",            "jobs":  8, "revenue": 1200.00 },
+    { "sector": "NDIS",           "jobs":  5, "revenue":  840.00 },
+    { "sector": "Airport/Cruise", "jobs":  4, "revenue":  420.50 },
+    { "sector": "NRMA",           "jobs":  3, "revenue":  180.00 },
+    { "sector": "Private",        "jobs":  2, "revenue":  160.00 },
+    { "sector": "Other",          "jobs":  0, "revenue":    0.00 }
+  ],
+  "vehicle_use": [
+    { "vehicle": "Camry Hybrid 1", "jobs": 28, "revenue": 4720.00 },
+    { "vehicle": "Camry Hybrid 2", "jobs": 24, "revenue": 4180.00 },
+    { "vehicle": "Camry Hybrid 3", "jobs": 19, "revenue": 3280.00 },
+    { "vehicle": "Ute",            "jobs":  9, "revenue": 1640.50 },
+    { "vehicle": "Rental — Camry", "jobs":  5, "revenue":  640.00 },
+    { "vehicle": "Other / Sub",    "jobs":  2, "revenue":  160.00 }
+  ],
+  "ytd": {
+    "revenue_actual": 612430.00,
+    "revenue_budget": 595000.00,
+    "wages_actual":   268420.00,
+    "wages_budget":   275000.00,
+    "expenses_actual": 89240.00,
+    "expenses_budget": 92000.00,
+    "net_actual":      254770.00,
+    "net_budget":      228000.00,
+    "months_elapsed": 11,
+    "months_in_year": 12
+  },
+  "monthly_trend": [
+    { "month": "2025-07", "revenue": 48200, "budget_revenue": 49000, "wages": 21200, "expenses": 7300 },
+    { "month": "2025-08", "revenue": 51400, "budget_revenue": 49000, "wages": 22100, "expenses": 7820 },
+    { "month": "2025-09", "revenue": 53800, "budget_revenue": 50000, "wages": 23400, "expenses": 7940 },
+    { "month": "2025-10", "revenue": 56230, "budget_revenue": 50000, "wages": 24100, "expenses": 8240 },
+    { "month": "2025-11", "revenue": 58400, "budget_revenue": 50000, "wages": 24800, "expenses": 8410 },
+    { "month": "2025-12", "revenue": 49600, "budget_revenue": 48000, "wages": 22300, "expenses": 8050 },
+    { "month": "2026-01", "revenue": 52800, "budget_revenue": 49000, "wages": 23900, "expenses": 8180 },
+    { "month": "2026-02", "revenue": 54100, "budget_revenue": 50000, "wages": 24400, "expenses": 8240 },
+    { "month": "2026-03", "revenue": 58200, "budget_revenue": 51000, "wages": 25100, "expenses": 8420 },
+    { "month": "2026-04", "revenue": 61800, "budget_revenue": 52000, "wages": 25800, "expenses": 8530 },
+    { "month": "2026-05", "revenue": 67900, "budget_revenue": 53000, "wages": 26420, "expenses": 8480 }
+  ]
+}

@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Riverstone Logistics — Operations Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --brand: #1F3A5F;
+    --brand-light: #2E5A8C;
+    --accent: #E8A33D;
+    --good: #2E7D52;
+    --bad:  #B5403A;
+    --muted: #6B7480;
+    --bg: #F5F6F8;
+    --card: #FFFFFF;
+    --border: #E1E4EA;
+    --text: #1A1F2B;
+  }
+  *,*::before,*::after { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.45;
+  }
+  header.topbar {
+    background: var(--brand);
+    color: #fff;
+    padding: 14px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  header.topbar h1 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+  }
+  header.topbar .meta {
+    font-size: 12px;
+    opacity: 0.85;
+    text-align: right;
+  }
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  .week-banner {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-bottom: 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .week-banner .label {
+    color: var(--muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+  }
+  .week-banner .value {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--brand);
+  }
+  .week-banner .sample-tag {
+    background: #FFF1D6;
+    color: #8A6D1F;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .grid {
+    display: grid;
+    gap: 16px;
+  }
+  .kpi-grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    margin-bottom: 18px;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+  }
+  .card h2 {
+    margin: 0 0 12px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--brand);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .kpi {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .kpi .label {
+    color: var(--muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .kpi .value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.2px;
+  }
+  .kpi .delta {
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .delta.up   { color: var(--good); }
+  .delta.down { color: var(--bad); }
+  .delta.flat { color: var(--muted); }
+  .charts-grid {
+    grid-template-columns: 1.2fr 1fr;
+  }
+  @media (max-width: 900px) {
+    .charts-grid { grid-template-columns: 1fr; }
+  }
+  .chart-wrap {
+    position: relative;
+    height: 280px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  th, td {
+    text-align: left;
+    padding: 8px 6px;
+    border-bottom: 1px solid var(--border);
+  }
+  th {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .bar-track {
+    background: #ECEEF3;
+    height: 6px;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 6px;
+  }
+  .bar-fill {
+    height: 100%;
+    background: var(--brand-light);
+    border-radius: 3px;
+  }
+  .bar-fill.over { background: var(--good); }
+  .bar-fill.under { background: var(--bad); }
+  .ytd-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  @media (max-width: 720px) { .ytd-grid { grid-template-columns: 1fr; } }
+  .ar-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 4px 12px;
+    padding: 6px 0;
+    border-bottom: 1px dashed var(--border);
+    font-size: 13px;
+  }
+  .ar-row:last-child { border-bottom: 0; font-weight: 600; padding-top: 10px; }
+  .ar-row .label { color: var(--muted); }
+  .ar-row .amount { font-variant-numeric: tabular-nums; }
+  footer.footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 11px;
+    padding: 24px 12px 32px;
+  }
+  .error-banner {
+    background: #FDECEA;
+    color: var(--bad);
+    border: 1px solid #F4C2BD;
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    display: none;
+  }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <h1>Riverstone Logistics — Operations Dashboard</h1>
+  <div class="meta">
+    <div id="generated-at">Loading…</div>
+    <div id="data-source"></div>
+  </div>
+</header>
+
+<div class="container">
+  <div id="error" class="error-banner"></div>
+
+  <div class="week-banner">
+    <div>
+      <div class="label">Week</div>
+      <div class="value" id="week-range">—</div>
+    </div>
+    <div>
+      <div class="label">Compared to</div>
+      <div class="value" id="prior-week-range">—</div>
+    </div>
+    <div id="sample-tag-wrap" style="display:none">
+      <span class="sample-tag">Sample data</span>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="grid kpi-grid">
+    <div class="card kpi"><div class="label">Jobs completed</div><div class="value" id="kpi-jobs">—</div><div class="delta" id="kpi-jobs-delta"></div></div>
+    <div class="card kpi"><div class="label">Revenue</div><div class="value" id="kpi-revenue">—</div><div class="delta" id="kpi-revenue-delta"></div></div>
+    <div class="card kpi"><div class="label">Wages</div><div class="value" id="kpi-wages">—</div><div class="delta" id="kpi-wages-delta"></div></div>
+    <div class="card kpi"><div class="label">Expenses</div><div class="value" id="kpi-expenses">—</div><div class="delta" id="kpi-expenses-delta"></div></div>
+    <div class="card kpi"><div class="label">Gross margin</div><div class="value" id="kpi-margin">—</div><div class="delta" id="kpi-margin-pct"></div></div>
+    <div class="card kpi"><div class="label">Avg revenue / job</div><div class="value" id="kpi-avg">—</div></div>
+  </div>
+
+  <!-- Charts row -->
+  <div class="grid charts-grid" style="margin-bottom:18px">
+    <div class="card">
+      <h2>Jobs by client (this week)</h2>
+      <div class="chart-wrap"><canvas id="chart-clients"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>Vehicle use (this week)</h2>
+      <div class="chart-wrap"><canvas id="chart-vehicles"></canvas></div>
+    </div>
+  </div>
+
+  <!-- YTD vs budget -->
+  <div class="grid ytd-grid" style="margin-bottom:18px">
+    <div class="card">
+      <h2>YTD vs budget</h2>
+      <table id="ytd-table">
+        <thead>
+          <tr><th>Line</th><th class="num">Actual</th><th class="num">Budget</th><th class="num">vs Budget</th><th>Tracking</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h2>Aged receivables</h2>
+      <div id="ar-block"></div>
+    </div>
+  </div>
+
+  <!-- Monthly trend -->
+  <div class="card">
+    <h2>Revenue: actual vs budget (FY to date)</h2>
+    <div class="chart-wrap" style="height:300px"><canvas id="chart-trend"></canvas></div>
+  </div>
+</div>
+
+<footer class="footer">
+  Riverstone Logistics Pty Ltd · Internal use only · Refreshes daily
+</footer>
+
+<script>
+  const fmt = {
+    money: (n) => "$" + (n || 0).toLocaleString("en-AU", { minimumFractionDigits: 0, maximumFractionDigits: 0 }),
+    money2: (n) => "$" + (n || 0).toLocaleString("en-AU", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+    int: (n) => (n || 0).toLocaleString("en-AU"),
+    pct: (n) => (n >= 0 ? "+" : "") + (n || 0).toFixed(1) + "%",
+    dateRange: (start, end) => {
+      const s = new Date(start), e = new Date(end);
+      const opts = { day: "numeric", month: "short" };
+      return s.toLocaleDateString("en-AU", opts) + " – " + e.toLocaleDateString("en-AU", { ...opts, year: "numeric" });
+    }
+  };
+  const delta = (curr, prior) => {
+    if (!prior) return 0;
+    return ((curr - prior) / prior) * 100;
+  };
+  const deltaClass = (d, invert=false) => {
+    if (Math.abs(d) < 0.05) return "flat";
+    if (invert) return d > 0 ? "down" : "up";
+    return d > 0 ? "up" : "down";
+  };
+
+  async function loadData() {
+    try {
+      const res = await fetch("data.json?ts=" + Date.now());
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      return await res.json();
+    } catch (e) {
+      document.getElementById("error").style.display = "block";
+      document.getElementById("error").textContent = "Could not load data.json: " + e.message;
+      return null;
+    }
+  }
+
+  function setKpi(idValue, idDelta, value, prior, opts={}) {
+    document.getElementById(idValue).textContent = opts.money ? fmt.money(value) : fmt.int(value);
+    if (idDelta && prior !== undefined) {
+      const d = delta(value, prior);
+      const el = document.getElementById(idDelta);
+      el.textContent = fmt.pct(d) + " vs last wk";
+      el.className = "delta " + deltaClass(d, opts.invert);
+    }
+  }
+
+  function renderClientsChart(data) {
+    const sorted = [...data.jobs_by_client].sort((a, b) => b.jobs - a.jobs);
+    new Chart(document.getElementById("chart-clients"), {
+      type: "bar",
+      data: {
+        labels: sorted.map(d => d.sector),
+        datasets: [{
+          label: "Jobs",
+          data: sorted.map(d => d.jobs),
+          backgroundColor: "#2E5A8C",
+          borderRadius: 4,
+        }]
+      },
+      options: {
+        indexAxis: "y",
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                const row = sorted[ctx.dataIndex];
+                return `${row.jobs} jobs · ${fmt.money(row.revenue)}`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: { beginAtZero: true, ticks: { precision: 0 } }
+        }
+      }
+    });
+  }
+
+  function renderVehicleChart(data) {
+    const sorted = [...data.vehicle_use].sort((a, b) => b.jobs - a.jobs);
+    new Chart(document.getElementById("chart-vehicles"), {
+      type: "doughnut",
+      data: {
+        labels: sorted.map(d => d.vehicle),
+        datasets: [{
+          data: sorted.map(d => d.jobs),
+          backgroundColor: ["#1F3A5F", "#2E5A8C", "#4A7AB0", "#E8A33D", "#9CA9BD", "#C5CCD8"],
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: "right", labels: { boxWidth: 12, font: { size: 12 } } },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                const row = sorted[ctx.dataIndex];
+                return `${row.vehicle}: ${row.jobs} jobs (${fmt.money(row.revenue)})`;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  function renderYtdTable(data) {
+    const ytd = data.ytd;
+    const pace = ytd.months_elapsed / ytd.months_in_year;
+    const rows = [
+      { label: "Revenue",  actual: ytd.revenue_actual,  budget: ytd.revenue_budget,  higherIsBetter: true  },
+      { label: "Wages",    actual: ytd.wages_actual,    budget: ytd.wages_budget,    higherIsBetter: false },
+      { label: "Expenses", actual: ytd.expenses_actual, budget: ytd.expenses_budget, higherIsBetter: false },
+      { label: "Net result", actual: ytd.net_actual,    budget: ytd.net_budget,      higherIsBetter: true  },
+    ];
+    const tbody = document.querySelector("#ytd-table tbody");
+    tbody.innerHTML = "";
+    rows.forEach(r => {
+      const proRatedBudget = r.budget * pace;
+      const diff = r.actual - proRatedBudget;
+      const pct = proRatedBudget ? (diff / proRatedBudget) * 100 : 0;
+      const trackingOK = r.higherIsBetter ? diff >= 0 : diff <= 0;
+      const cls = trackingOK ? "over" : "under";
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${r.label}</td>
+        <td class="num">${fmt.money(r.actual)}</td>
+        <td class="num">${fmt.money(r.budget)}</td>
+        <td class="num" style="color:${trackingOK ? 'var(--good)' : 'var(--bad)'}">${fmt.pct(pct)}</td>
+        <td>
+          <div class="bar-track"><div class="bar-fill ${cls}" style="width:${Math.min(100, Math.max(2, (r.actual / r.budget) * 100)).toFixed(0)}%"></div></div>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function renderAR(data) {
+    const ar = data.week.aged_receivables;
+    const rows = [
+      { label: "Current (not yet due)", amount: ar.current },
+      { label: "1 – 30 days overdue",   amount: ar["1_30"] },
+      { label: "31 – 60 days overdue",  amount: ar["31_60"] },
+      { label: "61 – 90 days overdue",  amount: ar["61_90"] },
+      { label: "Over 90 days overdue",  amount: ar.over_90 },
+      { label: "Total outstanding",     amount: ar.total },
+    ];
+    const el = document.getElementById("ar-block");
+    el.innerHTML = rows.map(r => `
+      <div class="ar-row">
+        <div class="label">${r.label}</div>
+        <div class="amount">${fmt.money(r.amount)}</div>
+      </div>
+    `).join("");
+  }
+
+  function renderTrendChart(data) {
+    const labels = data.monthly_trend.map(m => {
+      const [y, mo] = m.month.split("-");
+      return new Date(y, +mo - 1).toLocaleDateString("en-AU", { month: "short", year: "2-digit" });
+    });
+    new Chart(document.getElementById("chart-trend"), {
+      type: "bar",
+      data: {
+        labels,
+        datasets: [
+          {
+            label: "Revenue (actual)",
+            data: data.monthly_trend.map(m => m.revenue),
+            backgroundColor: "#2E5A8C",
+            borderRadius: 4,
+            order: 2,
+          },
+          {
+            label: "Revenue (budget)",
+            data: data.monthly_trend.map(m => m.budget_revenue),
+            type: "line",
+            borderColor: "#E8A33D",
+            backgroundColor: "#E8A33D",
+            tension: 0.25,
+            borderWidth: 2,
+            pointRadius: 3,
+            order: 1,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: "top", labels: { boxWidth: 12, font: { size: 12 } } },
+          tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${fmt.money(ctx.raw)}` } }
+        },
+        scales: {
+          y: { beginAtZero: true, ticks: { callback: (v) => fmt.money(v) } }
+        }
+      }
+    });
+  }
+
+  (async () => {
+    const data = await loadData();
+    if (!data) return;
+
+    // Header
+    document.getElementById("generated-at").textContent =
+      "Generated: " + new Date(data._meta.generated_at).toLocaleString("en-AU", { dateStyle: "medium", timeStyle: "short" });
+    document.getElementById("data-source").textContent = data._meta.data_source || "";
+    if ((data._meta.data_source || "").toLowerCase().includes("sample")) {
+      document.getElementById("sample-tag-wrap").style.display = "block";
+    }
+
+    document.getElementById("week-range").textContent = fmt.dateRange(data._meta.week_start, data._meta.week_end);
+    document.getElementById("prior-week-range").textContent = fmt.dateRange(data._meta.prior_week_start, data._meta.prior_week_end);
+
+    // KPIs
+    const w = data.week;
+    setKpi("kpi-jobs",     "kpi-jobs-delta",     w.jobs_total,    w.jobs_prior_week);
+    setKpi("kpi-revenue",  "kpi-revenue-delta",  w.revenue,       w.revenue_prior_week,  { money: true });
+    setKpi("kpi-wages",    "kpi-wages-delta",    w.wages,         w.wages_prior_week,    { money: true, invert: true });
+    setKpi("kpi-expenses", "kpi-expenses-delta", w.expenses,      w.expenses_prior_week, { money: true, invert: true });
+    document.getElementById("kpi-margin").textContent = fmt.money(w.gross_margin);
+    const marginPct = w.revenue ? (w.gross_margin / w.revenue) * 100 : 0;
+    document.getElementById("kpi-margin-pct").textContent = marginPct.toFixed(1) + "% of revenue";
+    document.getElementById("kpi-margin-pct").className = "delta flat";
+    document.getElementById("kpi-avg").textContent = fmt.money2(w.avg_revenue_per_job);
+
+    // Charts and tables
+    renderClientsChart(data);
+    renderVehicleChart(data);
+    renderYtdTable(data);
+    renderAR(data);
+    renderTrendChart(data);
+  })();
+</script>
+</body>
+</html>
