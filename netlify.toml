@@ -2,6 +2,13 @@
 publish = "public"
 command = "node scripts/refresh-data.js"
 
+# NETLIFY_SITE_ID is injected automatically at build time — do NOT add it as an env var.
+# Add XERO_TOKEN_PERSIST_KEY to Netlify env vars (Site config → Environment variables)
+# with the value of your Personal Access Token from:
+#   netlify.com → User settings → OAuth applications → Personal access tokens
+[build.environment]
+NODE_VERSION = "20"
+
 [functions]
 directory = "netlify/functions"
 node_bundler = "esbuild"
