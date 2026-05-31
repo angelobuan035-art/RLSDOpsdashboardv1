@@ -14,12 +14,18 @@ const OUTPUT_PATH = path.join(__dirname, "..", "public", "data.json");
 // After a successful Xero token refresh, write the NEW refresh token back to
 // Netlify's environment variables so the next build uses the rotated token.
 async function persistNewRefreshToken(newRefreshToken) {
-  const siteId = process.env.SITE_ID || process.env.NETLIFY_SITE_ID;
-  const apiToken = process.env.NETLIFY_API_TOKEN;
+  // NETLIFY_SITE_ID is injected automatically by Netlify at build time — no need to set it.
+  // XERO_TOKEN_PERSIST_KEY must be a Netlify Personal Access Token you create at:
+  //   netlify.com → User settings → OAuth applications → Personal access tokens → New access token
+  // Then add it to Netlify env vars as:  XERO_TOKEN_PERSIST_KEY = <your token>
+  const siteId   = process.env.NETLIFY_SITE_ID;
+  const apiToken = process.env.XERO_TOKEN_PERSIST_KEY;
 
   if (!siteId || !apiToken) {
-    console.warn("⚠️  NETLIFY_API_TOKEN or SITE_ID not set — cannot persist rotated refresh token.");
-    console.warn("    Add these to Netlify env vars to enable automatic token rotation.");
+    console.warn("⚠️  XERO_TOKEN_PERSIST_KEY not set — cannot auto-persist rotated refresh token.");
+    console.warn("    The build will still succeed today, but next daily build may fail.");
+    console.warn("    Fix: create a Personal Access Token at netlify.com → User settings →");
+    console.warn("    OAuth applications, then add it as XERO_TOKEN_PERSIST_KEY in env vars.");
     return;
   }
 
